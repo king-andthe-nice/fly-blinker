@@ -4,6 +4,8 @@ import os
 import paho.mqtt.client as mqtt
 import ssl
 from serverchan_sdk import sc_send
+from flask import Flask
+import threading
 
 # ===================== 你的配置 =====================
 MY_CLIENT_ID = "3"
@@ -16,6 +18,17 @@ CHECK_INTERVAL = 10  # 每10秒检查一次
 # ====================================================
 
 STATE_FILE = "last_state.txt"
+
+# --- 为了通过 Fly.io 健康检查，加个假 HTTP 服务 ---
+app = Flask(__name__)
+@app.route('/')
+def health_check():
+    return "OK", 200
+
+def run_flask():
+    # 监听 0.0.0.0:8080，匹配 Fly 默认端口
+    app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+# ---------------------------------------------------
 
 def on_connect(client, userdata, flags, rc, reasonCode):
     client.subscribe(f"/device/{MY_CLIENT_ID}/r")
@@ -82,6 +95,11 @@ def check_device():
     return result if result == "online" else "offline"
 
 if __name__ == "__main__":
+    # 启动 Flask 服务（后台线程）
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    print("✅ Flask 健康检查服务已启动，监听 8080 端口")
+
     print("="*50)
     print("      Blinker 设备 24 小时在线监控工具")
     print("="*50)
