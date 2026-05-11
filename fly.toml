@@ -1,0 +1,17 @@
+app = "fly-blinker"  # 改成你自己的应用名
+primary_region = "sin"  # 选一个离你近的区域，比如 ams（阿姆斯特丹）
+
+[build]
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = false  # 关键：不要自动停机
+auto_start_machines = true
+min_machines_running = 1
+processes = ["app"]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 256
